@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hang-person(man)</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#111a2e;
+      --text:#e8eefc;
+      --muted:#aab6d6;
+      --accent:#6ea8fe;
+      --danger:#ff5c7a;
+      --ok:#39d98a;
+      --shadow: 0 12px 28px rgba(0,0,0,.35);
+      --border: 1px solid rgba(255,255,255,.08);
+      --radius: 16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% 10%, #162345, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+    }
+    .app{
+      width:min(1100px, 100%);
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 900px){
+      .app{ grid-template-columns: 1fr; }
+    }
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border: var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    h1{
+      font-size: 22px;
+      margin:0;
+      letter-spacing:.4px;
+    }
+    .sub{
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+      line-height: 1.3;
+    }
+    .meta{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+    .pill{
+      border: var(--border);
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      display:flex;
+      gap: 8px;
+      align-items:center;
+    }
+    .pill b{ color: var(--text); font-weight: 650; }
+    .btnRow{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    button{
+      cursor:pointer;
+      border-radius: 12px;
+      border: var(--border);
+      background: rgba(110,168,254,.12);
+      color: var(--text);
+      padding: 10px 12px;
+      font-weight: 650;
+      letter-spacing:.2px;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+    }
+    button:hover{
+      background: rgba(110,168,254,.18);
+      border-color: rgba(110,168,254,.35);
+    }
+    button:active{ transform: translateY(1px); }
+    button.secondary{
+      background: rgba(255,255,255,.04);
+    }
+    button.secondary:hover{
+      background: rgba(255,255,255,.07);
+      border-color: rgba(255,255,255,.18);
+    }
+    button.danger{
+      background: rgba(255,92,122,.14);
+    }
+    button.danger:hover{
+      border-color: rgba(255,92,122,.35);
+      background: rgba(255,92,122,.2);
+    }
+    .select{
+      border: var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 650;
+    }
+
+    /* Canvas area */
+    .canvasWrap{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 12px;
+    }
+    canvas{
+      width: 100%;
+      max-width: 380px;
+      aspect-ratio: 1/1;
+      border-radius: 14px;
+      background: rgba(0,0,0,.14);
+      border: var(--border);
+    }
+
+    /* Word / status */
+    .word{
+      font-size: 34px;
+      letter-spacing: 10px;
+      font-weight: 800;
+      text-align:center;
+      margin: 10px 0 2px;
+      word-break: break-word;
+    }
+    .category{
+      text-align:center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .status{
+      text-align:center;
+      font-weight: 750;
+      margin: 10px 0 8px;
+    }
+    .status.ok{ color: var(--ok); }
+    .status.bad{ color: var(--danger); }
+
+    /* Keyboard */
+    .kbd{
+      display:grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    @media (max-width: 520px){
+      .kbd{ grid-template-columns: repeat(7, 1fr); }
+    }
+    .key{
+      padding: 10px 0;
+      border-radius: 12px;
+      border: var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-weight: 800;
+      text-align:center;
+      cursor:pointer;
+      transition: transform .06s ease, background .15s ease, opacity .15s ease;
+      user-select:none;
+    }
+    .key:hover{ background: rgba(255,255,255,.07); }
+    .key:active{ transform: translateY(1px); }
+    .key.used{
+      opacity: .45;
+      cursor:not-allowed;
+    }
+    .key.good{
+      border-color: rgba(57,217,138,.35);
+      background: rgba(57,217,138,.12);
+    }
+    .key.bad{
+      border-color: rgba(255,92,122,.35);
+      background: rgba(255,92,122,.12);
+    }
+
+    .hintBox{
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      border: var(--border);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+      min-height: 48px;
+    }
+    .hintBox b{ color: var(--text); }
+    .footerTip{
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align:center;
+    }
+    .srOnly{
+      position:absolute;
+      width:1px;height:1px;
+      padding:0;margin:-1px;
+      overflow:hidden;clip:rect(0,0,0,0);
+      white-space:nowrap;border:0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Hang-person(man) game">
+    <!-- Left: Hangman drawing -->
+    <section class="panel">
+      <div class="header">
+        <div>
+          <h1>Hang-person(man)</h1>
+          <div class="sub">Guess the word one letter at a time.</div>
+        </div>
+        <div class="meta">
+          <div class="pill" aria-label="Lives remaining">
+            Lives: <b id="lives">6</b>
+          </div>
+          <div class="pill" aria-label="Wrong guesses">
+            Wrong: <b id="wrong">0</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvasWrap">
+        <canvas id="canvas" width="520" height="520" aria-label="Hang-person(man) drawing" role="img"></canvas>
+      </div>
+
+      <div class="btnRow">
+        <button id="newWordBtn" title="Start a new word">New word</button>
+        <button id="restartBtn" class="secondary" title="Restart current word">Restart</button>
+        <button id="hintBtn" class="secondary" title="Show hint">Hint</button>
+        <select id="difficulty" class="select" title="Difficulty">
+          <option value="easy">Easy (8 lives)</option>
+          <option value="normal" selected>Normal (6 lives)</option>
+          <option value="hard">Hard (5 lives)</option>
+        </select>
+      </div>
+
+      <div class="hintBox" id="hintBox" aria-live="polite">
+        <b>Hint:</b> (press “Hint” if you want one)
+      </div>
+      <div class="footerTip">Tip: You can use your physical keyboard too.</div>
+    </section>
+
+    <!-- Right: Word + keyboard -->
+    <section class="panel">
+      <div class="word" id="word" aria-label="Word to guess"></div>
+      <div class="category" id="category"></div>
+      <div class="status" id="status" aria-live="polite"></div>
+
+      <div class="kbd" id="kbd" aria-label="Keyboard"></div>
+      <div class="srOnly" id="srUpdates" aria-live="assertive"></div>
+    </section>
+  </div>
+
+  <script>
+    // ---- Word list (edit these!) ----
+    // Each entry: { word: "STRING", category: "STRING", hint: "STRING" }
+    const WORDS = [
+      { word: "JAVASCRIPT", category: "Programming", hint: "Runs in the browser and on servers." },
+      { word: "SILENT SCOPE", category: "Games", hint: "It primarily exists in arcades." },
+      { word: "One Piece", category: "A TV Show", hint: "Nah" }      
+    ];
+
+    // ---- Game state ----
+    const state = {
+      answer: "",
+      category: "",
+      hint: "",
+      revealed: [],
+      used: new Set(),
+      wrong: 0,
+      lives: 6,
+      maxLives: 6,
+      gameOver: false,
+      hintShown: false,
+    };
+
+    // ---- DOM ----
+    const elWord = document.getElementById("word");
+    const elCategory = document.getElementById("category");
+    const elStatus = document.getElementById("status");
+    const elLives = document.getElementById("lives");
+    const elWrong = document.getElementById("wrong");
+    const elKbd = document.getElementById("kbd");
+    const elCanvas = document.getElementById("canvas");
+    const ctx = elCanvas.getContext("2d");
+    const elHintBox = document.getElementById("hintBox");
+    const elNewWord = document.getElementById("newWordBtn");
+    const elRestart = document.getElementById("restartBtn");
+    const elHintBtn = document.getElementById("hintBtn");
+    const elDifficulty = document.getElementById("difficulty");
+    const elSr = document.getElementById("srUpdates");
+
+    // ---- Helpers ----
+    const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+    function announce(msg){
+      elSr.textContent = msg;
+    }
+
+    function pickRandomWord(){
+      const item = WORDS[Math.floor(Math.random() * WORDS.length)];
+      return {
+        answer: item.word.toUpperCase().replace(/[^A-Z]/g, ""), // keep letters
+        category: item.category || "",
+        hint: item.hint || ""
+      };
+    }
+
+    function setDifficulty(value){
+      if(value === "easy") state.maxLives = 8;
+      else if(value === "hard") state.maxLives = 5;
+      else state.maxLives = 6;
+    }
+
+    function resetGame(newWord = true){
+      setDifficulty(elDifficulty.value);
+
+      if(newWord || !state.answer){
+        const { answer, category, hint } = pickRandomWord();
+        state.answer = answer;
+        state.category = category;
+        state.hint = hint;
+      }
+
+      state.revealed = Array.from(state.answer).map(_ => false);
+      state.used = new Set();
+      state.wrong = 0;
+      state.lives = state.maxLives;
+      state.gameOver = false;
+      state.hintShown = false;
+
+      elHintBox.innerHTML = "<b>Hint:</b> (press “Hint” if you want one)";
+      draw();
+      render();
+      announce("New game started.");
+    }
+
+    function render(){
+      // Word display with underscores
+      const shown = state.answer.split("").map((ch, i) => state.revealed[i] ? ch : "_").join(" ");
+      elWord.textContent = shown;
+      elCategory.textContent = state.category ? `Category: ${state.category}` : "";
+
+      elLives.textContent = state.lives;
+      elWrong.textContent = state.wrong;
+
+      // Status
+      if(state.gameOver){
+        if(isWin()){
+          elStatus.textContent = "You win! 🎉";
+          elStatus.className = "status ok";
+        } else {
+          elStatus.textContent = `Game over. The word was ${state.answer}.`;
+          elStatus.className = "status bad";
+        }
+      } else {
+        elStatus.textContent = "Pick a letter.";
+        elStatus.className = "status";
+      }
+
+      // Keyboard
+      elKbd.innerHTML = "";
+      for(const letter of ALPHABET){
+        const div = document.createElement("div");
+        div.className = "key";
+        div.textContent = letter;
+        div.setAttribute("role", "button");
+        div.setAttribute("tabindex", "0");
+        div.setAttribute("aria-label", `Letter ${letter}`);
+
+        if(state.used.has(letter)){
+          div.classList.add("used");
+          // Add good/bad styling if known
+          if(state.answer.includes(letter)) div.classList.add("good");
+          else div.classList.add("bad");
+          div.setAttribute("aria-disabled", "true");
+        }
+
+        div.addEventListener("click", () => guess(letter));
+        div.addEventListener("keydown", (e) => {
+          if(e.key === "Enter" || e.key === " ") guess(letter);
+        });
+
+        elKbd.appendChild(div);
+      }
+    }
+
+    function isWin(){
+      return state.revealed.every(Boolean);
+    }
+
+    function guess(letter){
+      if(state.gameOver) return;
+      if(!/^[A-Z]$/.test(letter)) return;
+      if(state.used.has(letter)) return;
+
+      state.used.add(letter);
+
+      if(state.answer.includes(letter)){
+        // Reveal all occurrences
+        state.answer.split("").forEach((ch, i) => {
+          if(ch === letter) state.revealed[i] = true;
+        });
+        announce(`Correct: ${letter}`);
+      } else {
+        state.wrong++;
+        state.lives--;
+        announce(`Wrong: ${letter}. Lives remaining: ${state.lives}`);
+      }
+
+      // End conditions
+      if(isWin()){
+        state.gameOver = true;
+        announce("You win!");
+      } else if(state.lives <= 0){
+        state.gameOver = true;
+        // reveal word
+        state.revealed = state.revealed.map(_ => true);
+        announce(`Game over. Word was ${state.answer}`);
+      }
+
+      draw();
+      render();
+    }
+
+    // ---- Drawing (Canvas) ----
+    // We draw up to 6 parts by default, but adapt to maxLives.
+    function draw(){
+      const w = elCanvas.width, h = elCanvas.height;
+      ctx.clearRect(0,0,w,h);
+
+      // Styling
+      ctx.lineWidth = 10;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(232,238,252,0.9)";
+
+      // Base + post
+      line(90, 470, 430, 470);   // ground
+      line(160, 470, 160, 110);  // pole
+      line(160, 110, 340, 110);  // top bar
+      line(340, 110, 340, 160);  // rope
+
+      // Determine progress based on wrong guesses proportion
+      // Map wrong guesses to 6 body parts regardless of lives:
+      // If you have more lives, body parts fill more slowly.
+      const parts = 6;
+      const wrong = state.wrong;
+      const maxWrong = state.maxLives;
+      const stage = Math.min(parts, Math.floor((wrong / Math.max(1, maxWrong)) * (parts + 0.999)));
+
+      // Draw body parts progressively
+      // 1 head, 2 body, 3 left arm, 4 right arm, 5 left leg, 6 right leg
+      if(stage >= 1) circle(340, 205, 45);      // head
+      if(stage >= 2) line(340, 250, 340, 355);  // body
+      if(stage >= 3) line(340, 275, 285, 315);  // left arm
+      if(stage >= 4) line(340, 275, 395, 315);  // right arm
+      if(stage >= 5) line(340, 355, 300, 430);  // left leg
+      if(stage >= 6) line(340, 355, 380, 430);  // right leg
+
+      // If game over and lost, add eyes
+      if(state.gameOver && !isWin()){
+        ctx.strokeStyle = "rgba(255,92,122,0.95)";
+        ctx.lineWidth = 8;
+        // X eyes
+        line(322, 192, 334, 204);
+        line(334, 192, 322, 204);
+        line(346, 192, 358, 204);
+        line(358, 192, 346, 204);
+      }
+    }
+
+    function line(x1,y1,x2,y2){
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.stroke();
+    }
+    function circle(x,y,r){
+      ctx.beginPath();
+      ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.stroke();
+    }
+
+    // ---- Events ----
+    document.addEventListener("keydown", (e) => {
+      if(e.ctrlKey || e.metaKey || e.altKey) return;
+      const key = e.key.toUpperCase();
+      if(/^[A-Z]$/.test(key)){
+        guess(key);
+      } else if(key === "ENTER"){
+        // convenience: Enter restarts after game over
+        if(state.gameOver) resetGame(true);
+      }
+    });
+
+    elNewWord.addEventListener("click", () => resetGame(true));
+    elRestart.addEventListener("click", () => resetGame(false));
+
+    elHintBtn.addEventListener("click", () => {
+      if(state.hintShown){
+        elHintBox.innerHTML = "<b>Hint:</b> (already shown)";
+        return;
+      }
+      state.hintShown = true;
+      const hintText = state.hint ? state.hint : "No hint available for this word.";
+      elHintBox.innerHTML = `<b>Hint:</b> ${hintText}`;
+      announce("Hint shown.");
+    });
+
+    elDifficulty.addEventListener("change", () => {
+      // keep same word, just restart with new lives
+      resetGame(false);
+    });
+
+    // ---- Start ----
+    resetGame(true);
+  </script>
+</body>
+</html>
